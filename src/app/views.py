@@ -59,8 +59,7 @@ def favicon():
     '''
     Favicon
     '''
-    # TODO redirect to asset
-    pass
+    return redirect('/assets/favicon.ico', code=303)
 
 @application.errorhandler(404)
 def page_not_found(error):
@@ -84,6 +83,6 @@ def get_asset(path):
     }
     mimetype = mimetypes.get(os.path.splitext(path)[1], "text/html")
     root = os.path.abspath(os.path.dirname(__file__))
-    complete_path = os.path.join(os.path.join(root, 'static'), path)
+    complete_path = os.path.join(os.path.join(root, 'assets'), path)
     (head, tail) = os.path.split(complete_path)
     return send_from_directory(head, tail, mimetype=mimetype)
