@@ -1,21 +1,25 @@
 from . import config
 from flask import Flask
 from logging import Formatter, FileHandler
-
-application = Flask(__name__, template_folder='templates', static_folder='assets')
-application.jinja_env.trim_blocks = True
-application.jinja_env.lstrip_blocks = True
-
-application.debug = True
-if (hasattr(config, 'DEBUG')):
-    application.debug = config.DEBUG
+from storage.proxy import ProxyStore
 
 formatter = Formatter(
     '%(asctime)s %(levelname)s: %(message)s '
     '[in %(module)s:%(lineno)d]'
 )
+
+# Instantiate the application
+application = Flask(__name__, template_folder='templates', static_folder='assets')
+application.jinja_env.trim_blocks = True
+application.jinja_env.lstrip_blocks = True
+application.debug = True
+if (hasattr(config, 'DEBUG')):
+    application.debug = config.DEBUG
 for handler in application.logger.handlers:
     handler.setFormatter(formatter)
+
+# Instantiate the query interface
+proxy_store = ProxyStore()
 
 from . import views
 

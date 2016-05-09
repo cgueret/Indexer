@@ -1,32 +1,58 @@
 # coding=utf8
 import os
 
-from app import application
-from flask import render_template, send_from_directory
-
+from app import application, proxy_store
+from flask import render_template, send_from_directory, request, redirect
 from rdflib.namespace import Namespace
 
 OLO = Namespace("http://purl.org/ontology/olo/core#")
 MRSS = Namespace("http://search.yahoo.com/mrss/")
 SCHEMA = Namespace("http://schema.org/")
 
+# Test queries
+# http://acropolis.org.uk/?uri=http://dbpedia.org/resource/Venus_and_Adonis_(Shakespeare_poem)
+
 @application.route('/')
 def home():
     '''
     Route to the home page
     '''
-    # TODO If there are some parameters to the GET issue a search
+    # If there are some parameters to the GET issue a search
+    if len(request.args) != 0:
+        if 'uri' in request.args:
+            # This is a look-up request, try to find a proxy
+            uri = proxy_store.lookup(request.args.get('uri'))
+            if uri != None:
+                return redirect(uri, code=302)
+        else:
+            # Any other kind of search
+            results = proxy_store.search(request.args)
+            return render_template('search_results.html', results=results)
+        
     return render_template('index.html')
 
-@application.route('/<resource>', methods=['GET'])
-def getResource():
+@application.route('/<identifier>', methods=['GET'])
+def getResource(identifier):
     '''
-    Route to get a specific resource. This resource may be proxy or
+    Route to get a specific identifier. This identifier may be proxy or
     a collection
     '''
-    # TODO If there are some parameters to the GET and if the requested
-    # resource is a collection issue a search    
-    return render_template('resource.html')
+    # If there are some parameters to the GET and if the requested
+    # resource is a collection issue a search within the collection
+    if len(request.args) != 0:
+        if proxy_store.contains_collection(identifier):
+            request.args.set('collection', identifier)
+            results = proxy_store.search(request.args)
+            return render_template('search_results.html', results)
+    
+    # Render the resource
+    graph = proxy_store.get_proxy(request.base_url + "#id")
+    
+    # Turn the graph into something easier to process in the template
+    data = []
+    for (_, predicate, obj) in graph:
+        data.append((predicate.toPython(), obj.toPython()))
+    return render_template('resource.html', data=data)
         
 @application.route('/favicon.ico')
 def favicon():

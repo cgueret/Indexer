@@ -1,0 +1,4 @@
+# Find a proxy for the given target URI
+SELECT ?proxy WHERE {
+	?proxy owl:sameAs <__TARGET__>.
+}

@@ -18,7 +18,7 @@ class EntityExtractor(object):
         '''
         Constructor
         '''
-        # An map of CONSTRUCT models to test against each graph
+        # A map of CONSTRUCT models to test against each graph
         self._models = {}
         
         # Load all the models
