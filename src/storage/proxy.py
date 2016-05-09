@@ -105,9 +105,20 @@ class ProxyStore(object):
     
     def search(self, params):
         '''
-        OpenSearch
+        Full text search. The parameters are expected to contain a variable
+        'q' with the text to be searched for.
         '''
-        return []
+        results = []
+        query = self._queries['full_text_search.rq'].replace("__TEXT__", params.get('q'))
+        print ('Query {}'.format(query))
+        sparql = SPARQLWrapper(SPARQL)
+        sparql.setQuery(query)
+        sparql.setReturnFormat(JSON)
+        bindings = sparql.query().convert()["results"]["bindings"]
+        for b in bindings:
+            results.append(b["proxy"]["value"])
+            
+        return results
     
     def contains_collection(self, identifier):
         '''

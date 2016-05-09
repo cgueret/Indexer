@@ -1,0 +1,6 @@
+# Search for some text within the label or the description of proxy entities
+
+SELECT ?proxy WHERE {
+	?proxy rdfs:label ?label.
+  	FILTER(regex(?label,"__TEXT__","i"))
+}
