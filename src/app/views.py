@@ -20,6 +20,9 @@ logger = application.logger
 
 SUFFIX_TO_MIME = {
     ".ttl":"text/turtle",
+    ".nt":"application/n-triples",
+    ".rdf": "application/rdf+xml",
+    ".rj": "application/rdf+json",
     ".css": "text/css",
     ".html": "text/html",
     ".js": "application/javascript",
@@ -39,24 +42,35 @@ def negotiate(graph, html_template, request):
     '''
     # Serve HTML by default
     mimetype = 'text/html'
+    logger.debug('{}'.format(len(graph)))
         
     # Use the accept header if it was provided
     if 'Accept' in request.headers:
         mimetype = parse_accept_header(request.headers['Accept']).best
-    
+        logger.debug("Asked for {} in content neg".format(mimetype))
+
     # If a known suffix was asked use that instead of the accept header
-    ext = os.path.splitext(request.url)[1]
+    ext = os.path.splitext(request.base_url)[1]
     if ext in SUFFIX_TO_MIME:
         mimetype = SUFFIX_TO_MIME[ext]
+        logger.debug("Asked for {} using {}".format(mimetype, ext))
     
     logger.debug("Will serve {}".format(mimetype))
     
     # Serve HTML
     if mimetype in ['text/html','application/xhtml_xml','*/*']:
-        data = {'description': {}, 'related':{}}
-        # Extract basic properties from the graph
-        data['description']['label'] = graph.value(URIRef(request.url), RDFS.label).toPython()
+        # Prepare the map of data to pass on to the template
+        base = request.base_url.split('.')[0]
+        data = {'description': {}, 'related':{}, 'base': base}
         
+        # Extract basic properties from the graph
+        subj = URIRef(base + "#id")
+        logger.debug('Using subj {}'.format(subj))
+        try:
+            data['description']['label'] = graph.value(subj, RDFS.label).toPython()
+        except:
+            data['description']['label'] = ''
+            
         # Turn the OLO slots into a array of associated resources
         for slot in graph.subjects(RDF.type, OLO.Slot):
             index = graph.value(subject=slot, predicate=OLO['index']).toPython()
@@ -67,6 +81,7 @@ def negotiate(graph, html_template, request):
         return render_template(html_template, data=data)
     # Serve Turtle
     elif mimetype in ['text/turtle', 'application/x-turtle']:
+        logger.debug(graph.serialize(format='turtle'))
         response = make_response(graph.serialize(format='turtle'))
         response.headers['Content-Type'] = mimetype
         return response
@@ -144,7 +159,8 @@ def get_index():
             return do_search(request, request.args)
 
     # TODO Query for the list of collection and render the corresponding VoID        
-    return render_template('index.html')
+    data = {'base': request.base_url.split('.')[0]}
+    return render_template('index.html', data=data)
     
 @application.route('/<identifier>', methods=['GET'])
 def get_resource(identifier):

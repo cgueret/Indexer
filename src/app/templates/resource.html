@@ -1,1 +1,90 @@
-{{ data }}
+<!DOCTYPE html>
+<html>
+<head profile="http://a9.com/-/spec/opensearch/1.1/">
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width" />
+<!--[if lt IE 9]><script>document.createElement('header');document.createElement('nav');document.createElement('section');document.createElement('article');document.createElement('aside');document.createElement('footer');</script><![endif]-->
+<link rel="search" href="/index.osd"
+	type="application/opensearchdescription+xml" title="RES API">
+<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+
+<link rel="stylesheet"
+	href="//cloud.typography.com/6699852/732262/css/fonts.css"
+	type="text/css">
+<link rel="stylesheet"
+	href="//bbcarchdev.github.io/painting-by-numbers/style.css"
+	type="text/css">
+<link rel="stylesheet"
+	href="//bbcarchdev.github.io/painting-by-numbers/print.css"
+	type="text/css" media="print">
+<link rel="stylesheet"
+	href="//fonts.googleapis.com/css?family=Roboto:300,500,300italic,500italic|Inconsolata|Arapey"
+	type="text/css">
+<link rel="stylesheet" href="/assets/css/local.css">
+<!--[if lt IE 9]><link rel="stylesheet" type="text/css" href="//bbcarchdev.github.io/painting-by-numbers/ie78.css" /><![endif]-->
+<meta name="viewport"
+	content="width=device-width,initial-scale=1,minimum-scale=1" />
+<script type="text/javascript" src="/assets/js/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="/assets/local.js"></script>
+
+<title>Developer API • Research &amp; Education Space</title>
+</head>
+<body class="refentry index">
+	<header>
+		<nav class="global">
+			<div class="inner">
+				<ul>
+					<li class="logo"><a href="//bbcarchdev.github.io/res/"><abbr
+							title="Research &amp; Education Space">RES</abbr></a></li>
+					<li><a href="https://bbcarchdev.github.io/res/education">Education</a></li>
+					<li><a href="https://bbcarchdev.github.io/res/collections">Collections</a></li>
+					<li><a href="https://bbcarchdev.github.io/res/products">Products</a></li>
+					<li><a href="https://bbcarchdev.github.io/res/developers">Developers</a></li>
+					<li><a href="https://bbcarchdev.github.io/res/faq">FAQ</a></li>
+				</ul>
+			</div>
+		</nav>
+		<nav class="secondarynav">
+			<div class="inner">
+				<ul>
+					<li><a href="https://bbcarchdev.github.io/res/guides">Guides</a></li>
+					<li><a href="http://acropolis.org.uk">Developer API</a></li>
+					<li><a href="https://bbcarchdev.github.io/res/tools">Tools</a></li>
+					<li><a href="https://bbcarchdev.github.io/res/code">Source
+							code</a></li>
+				</ul>
+			</div>
+		</nav>
+		<div class="masthead"></div>
+		<nav class="subnav">
+			<div class="inner">
+				<ul>
+					<li><a href="/">API Home</a></li>
+				</ul>
+				<ul class="alternates">
+					<li><a href="{{data.base}}.nt">N-Triples</a></li>
+					<li><a href="{{data.base}}.ttl">Turtle</a></li>
+					<li><a href="{{data.base}}.rdf">RDF/XML</a></li>
+				</ul>
+			</div>
+		</nav>
+	</header>
+
+	<article>
+		<h1>{{data.description.label}}</h1>
+		<section>
+			<p></p>
+		</section>
+	</article>
+	
+	<footer>
+		<p>
+			Powered by Acropolis</a>. Data published here has been aggregated from
+			existing <a href="http://opendefinition.org/od/">open data
+				sources</a>.
+		</p>
+	</footer>
+</body>
+</html>
+
