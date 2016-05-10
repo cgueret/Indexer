@@ -9,6 +9,8 @@ from storage.proxy import ProxyStore
 from storage.collection import CollectionStore
 from urllib.parse import urlparse
 from rdflib.namespace import RDF
+from SPARQLWrapper import SPARQLWrapper, JSON, POST
+from storage.config import SPARUL
 
 import logging
 LOG_FORMAT = "%(asctime)-15s [%(levelname)-7s] %(name)s : %(message)s"
@@ -17,6 +19,17 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
+def clean_db():
+    '''
+    Utility function to clean the DB when testing
+    '''
+    logger.info("Cleaning the DB")
+    query = "DELETE {?s ?p ?o.} WHERE {?s ?p ?o.}"
+    sparql = SPARQLWrapper(SPARUL)
+    sparql.setQuery(query)
+    sparql.setMethod(POST)
+    sparql.query()
+    
 def process_entry(uri, cache, extractor, proxies, collections):
     '''
     Process one entry from the cache
@@ -56,6 +69,8 @@ def process_entry(uri, cache, extractor, proxies, collections):
         collections.add_to_collection(name, proxy_uri)
                 
 if __name__ == '__main__':
+    clean_db()
+    
     # Create an instance of the entity extractor
     extractor = EntityExtractor()
     
