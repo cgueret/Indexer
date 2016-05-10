@@ -5,19 +5,20 @@ PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX schema: <http://schema.org/>
-PREFIX po: <http://purl.org/ontology/po/>
-PREFIX wdrs: <http://www.w3.org/2007/05/powder-s#>
+PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX mrss: <http://search.yahoo.com/mrss/>
+PREFIX po: <http://purl.org/ontology/po/>
 
 CONSTRUCT {
-	?s rdf:type schema:Movie.
+	?s rdf:type po:TVContent.
 	?s rdfs:label ?label.
-	?s rdfs:seeAlso ?credit.
-	?s wdrs:describedBy ?player.
+	?s dct:description ?description.
+	?s foaf:topic ?credit.
+	?s mrss:player ?player.
 } WHERE {
 	?s rdf:type po:Episode.
 	?s rdfs:label ?label.
-	?s po:contribution ?other.
+	?s po:synopsis ?description.
 	?s po:credit ?credit.
 	?s mrss:player ?player.
 }
