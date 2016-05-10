@@ -11,7 +11,7 @@ PREFIX mrss: <http://search.yahoo.com/mrss/>
 CONSTRUCT {
 	?s rdf:type foaf:Image.
 	?s rdfs:label ?label.
-	?s dct:description ?description.
+	?s rdfs:comment ?description.
 	?s foaf:topic ?subject.
 	?s foaf:topic ?depicts.
 	?s mrss:player ?player.

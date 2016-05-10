@@ -12,7 +12,7 @@ PREFIX po: <http://purl.org/ontology/po/>
 CONSTRUCT {
 	?s rdf:type po:TVContent.
 	?s rdfs:label ?label.
-	?s dct:description ?description.
+	?s rdfs:comment ?description.
 	?s foaf:topic ?credit.
 	?s mrss:player ?player.
 } WHERE {

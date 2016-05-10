@@ -105,7 +105,7 @@ class ProxyStore(object):
         print ('Found the proxy {}'.format(proxy))
         return proxy
     
-    def search(self, search_uri, params):
+    def search(self, search_uri, params, collection='everything'):
         '''
         Full text search. The parameters are expected to contain a variable
         'q' with the text to be searched for.
@@ -117,8 +117,7 @@ class ProxyStore(object):
         # Prepare the query
         query = self._queries['full_text_search.rq']
         query = query.replace("__TEXT__", params.get('q'))
-        collection_name = params.get('collection', 'everything')
-        query = query.replace("__COLLECTION__", BASE + collection_name)        
+        query = query.replace("__COLLECTION__", BASE + collection)        
         logger.debug('Executing \n{}'.format(query))
         
         # Execute the query
@@ -150,7 +149,7 @@ class ProxyStore(object):
  
             # Describe the result entry
             graph.add((URIRef(result_uri), RDFS.label, Literal(label)))
-            graph.add((URIRef(result_uri), DCTERMS.description, Literal(description)))
+            graph.add((URIRef(result_uri), RDFS.comment, Literal(description)))
         
         # Add some text to describe the search    
         title = Literal("Everything containing \"{}\"".format(params['q']))

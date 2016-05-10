@@ -39,9 +39,7 @@ def graph_to_python(request, graph):
     '''
     # Prepare the map of data to pass on to the template
     base = request.base_url.split('.')[0]
-    data = {'description': {}, 'related':{}, 'base': base}
-    
-    logger.debug(graph.serialize(format="turtle").decode())
+    data = {'description': {}, 'related': {}, 'base': base}
         
     # Extract basic properties from the graph
     subj = URIRef(base + "#id")
@@ -114,9 +112,10 @@ def negotiate(graph, html_template, request):
         return response
     
 
-def do_search(request, params):
+def do_search(request, params, collection=None):
     # Get the results for the search
-    graph = proxies.search(request.url, params)
+    logger.debug(request.base_url)
+    graph = proxies.search(request.base_url + "#id", params, collection)
         
     # Negotiate the output
     return negotiate(graph, 'search_results.html', request)
@@ -164,10 +163,8 @@ def get_resource(identifier):
     # resource is a collection issue a search within the collection
     if len(request.args) != 0:
         if collections.contains(identifier):
-            # Add the collection to the target arguments
-            request.args.set('collection', identifier)
             # Do the search
-            return do_search(request, request.args)
+            return do_search(request, request.args, identifier)
     
     # Get the data
     graph = proxies.get_proxy(request.base_url.split('.')[0] + "#id")
