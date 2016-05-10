@@ -8,9 +8,7 @@ from couchdb import http
 import datetime
 import hashlib
 from rdflib.graph import Graph
-
-DEFAULT_STORE_URI = 'http://127.0.0.1:5984'
-CACHE_DB = 'indexer-cache'
+from storage.config import DEFAULT_STORE_URI, CACHE_DB
 
 def index_doc():
     '''

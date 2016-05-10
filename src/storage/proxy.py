@@ -4,19 +4,16 @@ Created on 1 Apr 2016
 @author: guerec01
 '''
 import uuid
-from rdflib.namespace import OWL, RDFS
+from rdflib.namespace import OWL
 from rdflib.graph import Graph
 from rdflib.term import URIRef
 from SPARQLWrapper import SPARQLWrapper, JSON, POST
 import storage
 import os
+from storage.config import BASE, SPARQL, SPARUL
 
-# The base URI to use for identifying proxies and collections
-BASE = "http://localhost:8080/"
-
-# Location of SPARQL and SPARUL end points
-SPARQL = "http://localhost:5820/indexer/query"
-SPARUL = "http://localhost:5820/indexer/update"
+import logging
+logger = logging.getLogger(__name__)
 
 class ProxyStore(object):
     '''
@@ -35,7 +32,7 @@ class ProxyStore(object):
         for entry in os.listdir(path):
             full_path = os.path.join(path, entry)
             if os.path.isfile(full_path) and entry.split('.')[-1] == 'rq':
-                print ('Loading {}'.format(entry))
+                logger.info('Loading {}'.format(entry))
                 self._queries[entry] = open(full_path, 'r').read()
     
     def store(self, graph):
@@ -54,7 +51,7 @@ class ProxyStore(object):
             created_proxy = False
         else:
             # Generate a new UUID
-            print ("Need to generate a new proxy")
+            logger.info("Generating a new proxy")
             proxy_uri = URIRef("{}{}#id".format(BASE, uuid.uuid1()))
             created_proxy = True
 
@@ -80,17 +77,19 @@ class ProxyStore(object):
         if created_proxy:
             self._relink_proxies(subject, proxy_uri)
     
+        return proxy_uri.toPython()
+    
     def has_proxy(self, uri):
         '''
         Returns True if there is a proxy entity containing this URI
         '''
         return self.get_proxy_uri(uri) != None
-    
+        
     def lookup(self, uri):
         '''
         Find a proxy referring to the given URI
         '''
-        print ('Lookup {}'.format(uri))
+        logger.info('Lookup {}'.format(uri))
         query = self._queries['find_proxy.rq'].replace("__TARGET__", uri)
         sparql = SPARQLWrapper(SPARQL)
         sparql.setQuery(query)
@@ -108,29 +107,33 @@ class ProxyStore(object):
         Full text search. The parameters are expected to contain a variable
         'q' with the text to be searched for.
         '''
+        # Prepare the array of results
         results = []
-        query = self._queries['full_text_search.rq'].replace("__TEXT__", params.get('q'))
-        print ('Query {}'.format(query))
+        
+        # Prepare the query
+        query = self._queries['full_text_search.rq']
+        query = query.replace("__TEXT__", params.get('q'))
+        collection_name = params.get('collection', 'everything')
+        query = query.replace("__COLLECTION__", BASE + collection_name)        
+        logger.debug('Executing \n{}'.format(query))
+        
+        # Execute the query
         sparql = SPARQLWrapper(SPARQL)
         sparql.setQuery(query)
         sparql.setReturnFormat(JSON)
         bindings = sparql.query().convert()["results"]["bindings"]
+        
+        # Convert the results
         for b in bindings:
             results.append(b["proxy"]["value"])
             
         return results
     
-    def contains_collection(self, identifier):
-        '''
-        Returns True if a collection exists for this identifier
-        '''
-        return False
-    
     def get_proxy(self, uri):
         '''
         Returns the description of a proxy entity
         '''
-        print ('Get proxy data about {}'.format(uri))
+        logger.info('Get proxy data about {}'.format(uri))
         query = self._queries['get_proxy.rq'].replace("__URI__", uri)
         sparql = SPARQLWrapper(SPARQL)
         sparql.setQuery(query)

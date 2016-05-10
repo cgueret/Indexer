@@ -1,7 +1,7 @@
 # coding=utf8
 import os
 
-from app import application, proxy_store
+from app import application, collections, proxies
 from flask import render_template, send_from_directory, request, redirect
 from rdflib.namespace import Namespace, RDF, RDFS
 from rdflib.graph import Graph
@@ -116,7 +116,7 @@ def array_to_olo(uri, array):
 
 def do_search(request, params):
     # Get the results for the search
-    results = proxy_store.search(params)
+    results = proxies.search(params)
     
     # Turn the result array into a OLO sorted graph
     search_uri = URIRef(request.url)
@@ -135,7 +135,7 @@ def home():
     Route to the home page
     '''
     args = request.args
-    redirect_url = url_for('get_index', **args)
+    redirect_url = url_for('index', **args)
 
     response = make_response('Moved permanently',303)
     response.headers['Location'] = redirect_url
@@ -143,7 +143,7 @@ def home():
     return response
 
 @application.route('/index', methods=['GET'])
-def get_index():
+def index():
     '''
     Show the index of the dataset or search in it
     '''
@@ -151,7 +151,7 @@ def get_index():
     if len(request.args) != 0:
         if 'uri' in request.args:
             # This is a look-up request, try to find a proxy
-            uri = proxy_store.lookup(request.args.get('uri'))
+            uri = proxies.lookup(request.args.get('uri'))
             if uri != None:
                 return redirect(uri, code=302)
         else:
@@ -171,14 +171,14 @@ def get_resource(identifier):
     # If there are some parameters to the GET and if the requested
     # resource is a collection issue a search within the collection
     if len(request.args) != 0:
-        if proxy_store.contains_collection(identifier):
+        if collections.contains(identifier):
             # Add the collection to the target arguments
             request.args.set('collection', identifier)
             # Do the search
             return do_search(request, request.args)
     
     # Get the data
-    graph = proxy_store.get_proxy(request.base_url.split('.')[0] + "#id")
+    graph = proxies.get_proxy(request.base_url.split('.')[0] + "#id")
 
     # Render the content
     return negotiate(graph, 'resource.html', request)

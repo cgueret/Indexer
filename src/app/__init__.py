@@ -2,6 +2,7 @@ from . import config
 from flask import Flask
 from logging import Formatter, FileHandler
 from storage.proxy import ProxyStore
+from storage.collection import CollectionStore
 
 formatter = Formatter(
     '%(asctime)s %(levelname)s: %(message)s '
@@ -18,8 +19,11 @@ if (hasattr(config, 'DEBUG')):
 for handler in application.logger.handlers:
     handler.setFormatter(formatter)
 
-# Instantiate the query interface
-proxy_store = ProxyStore()
+# Instantiate the proxy store
+proxies = ProxyStore()
+
+# Instantiate the collection store
+collections = CollectionStore()
 
 from . import views
 

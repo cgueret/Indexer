@@ -7,6 +7,9 @@ import os
 import component
 from rdflib.plugins.sparql.processor import prepareQuery
 
+import logging
+logger = logging.getLogger(__name__)
+
 class EntityExtractor(object):
     '''
     The entity extractor uses a set of processing rules to extract recognised
@@ -26,7 +29,7 @@ class EntityExtractor(object):
         for entry in os.listdir(path):
             full_path = os.path.join(path, entry)
             if os.path.isfile(full_path) and entry.split('.')[-1] == 'rq':
-                print ('Loading {}'.format(entry))
+                logger.info('Loading {}'.format(entry))
                 request = prepareQuery(open(full_path, 'r').read())
                 self._models[entry] = request
         
@@ -40,7 +43,7 @@ class EntityExtractor(object):
         for (name, query) in self._models.items():
             res_graph = graph.query(query).graph
             if len(res_graph) > 0:
-                print ('Found a match for {}'.format(name))
+                logger.info('Found a match for {}'.format(name))
                 results.append(res_graph)
                 
         return results
