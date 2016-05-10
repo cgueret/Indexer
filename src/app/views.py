@@ -3,13 +3,12 @@ import os
 
 from app import application, collections, proxies
 from flask import render_template, send_from_directory, request, redirect
-from rdflib.namespace import Namespace, RDF, RDFS
+from rdflib.namespace import Namespace, RDF, RDFS, DCTERMS
 from rdflib.graph import Graph
 from rdflib.term import URIRef, BNode, Literal
 from werkzeug.http import parse_accept_header
 from flask.helpers import make_response, url_for
 
-OLO = Namespace("http://purl.org/ontology/olo/core#")
 MRSS = Namespace("http://search.yahoo.com/mrss/")
 SCHEMA = Namespace("http://schema.org/")
 
@@ -30,6 +29,39 @@ SUFFIX_TO_MIME = {
     ".woff": "application/x-font-woff",
     ".ttf": "font/ttf"
 }
+
+OLO = Namespace("http://purl.org/ontology/olo/core#")
+
+def graph_to_python(request, graph):
+    '''
+    Convert a graph representing search results into a python structure
+    usable by the template engine
+    '''
+    # Prepare the map of data to pass on to the template
+    base = request.base_url.split('.')[0]
+    data = {'description': {}, 'related':{}, 'base': base}
+    
+    logger.debug(graph.serialize(format="turtle").decode())
+        
+    # Extract basic properties from the graph
+    subj = URIRef(base + "#id")
+    try:
+        data['description']['label'] = graph.value(subj, RDFS.label).toPython()
+    except:
+        data['description']['label'] = ''
+        
+    # Turn the OLO slots into a array of associated resources
+    for slot in graph.subjects(RDF.type, OLO.Slot):
+        index = graph.value(slot, OLO['index']).toPython()
+        item = graph.value(slot, OLO.item).toPython()
+        logger.debug(item)
+        label = graph.value(URIRef(item), RDFS.label).toPython()
+        description = graph.value(URIRef(item), DCTERMS.description).toPython()
+        data['related'][index] = {'uri':item, 
+                                  'label':label,
+                                  'description':description}
+    
+    return data
 
 def negotiate(graph, html_template, request):
     '''
@@ -59,24 +91,9 @@ def negotiate(graph, html_template, request):
     
     # Serve HTML
     if mimetype in ['text/html','application/xhtml_xml','*/*']:
-        # Prepare the map of data to pass on to the template
-        base = request.base_url.split('.')[0]
-        data = {'description': {}, 'related':{}, 'base': base}
+        # Get data usable by the template engine
+        data = graph_to_python(request, graph)
         
-        # Extract basic properties from the graph
-        subj = URIRef(base + "#id")
-        logger.debug('Using subj {}'.format(subj))
-        try:
-            data['description']['label'] = graph.value(subj, RDFS.label).toPython()
-        except:
-            data['description']['label'] = ''
-            
-        # Turn the OLO slots into a array of associated resources
-        for slot in graph.subjects(RDF.type, OLO.Slot):
-            index = graph.value(subject=slot, predicate=OLO['index']).toPython()
-            item = graph.value(subject=slot, predicate=OLO.item).toPython()
-            data['related'][index] = item
-
         # Render the requested template
         return render_template(html_template, data=data)
     # Serve Turtle
@@ -96,36 +113,11 @@ def negotiate(graph, html_template, request):
         response.headers['Content-Type'] = mimetype
         return response
     
-def array_to_olo(uri, array):
-    '''
-    Turns an array into an OLO based graph using some uri as the subject
-    
-    @param uri: the subject of the graph to create
-    @param array: the array of results to convert
-    '''
-    graph = Graph()
-    graph.namespace_manager.bind('olo', OLO)
-    for index in range(0, len(array)):
-        slot = BNode()
-        graph.add((slot, RDF.type, OLO.Slot))
-        graph.add((slot, RDFS.label, Literal("Result #{}".format(index+1))))
-        graph.add((slot, OLO['index'], Literal(index+1)))
-        graph.add((slot, OLO.item, URIRef(array[index])))
-        graph.add((uri, OLO.slot, slot))
-    return graph
 
 def do_search(request, params):
     # Get the results for the search
-    results = proxies.search(params)
-    
-    # Turn the result array into a OLO sorted graph
-    search_uri = URIRef(request.url)
-    graph = array_to_olo(search_uri, results)
-    
-    # Add some nice text
-    title = Literal("Everything containing \"{}\"".format(params['q']))
-    graph.add((search_uri, RDFS.label, title))
-    
+    graph = proxies.search(request.url, params)
+        
     # Negotiate the output
     return negotiate(graph, 'search_results.html', request)
     

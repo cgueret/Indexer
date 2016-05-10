@@ -1,8 +1,18 @@
 # Search for some text within the label or the description of proxy entities
 PREFIX dct: <http://purl.org/dc/terms/>
 
-SELECT ?proxy WHERE {
+SELECT ?proxy ?label ?description WHERE {
+	{
 	?proxy rdfs:label ?label.
+	?proxy dct:description ?description.
 	?proxy dct:isPartOf <__COLLECTION__>.
   	FILTER(regex(?label,"__TEXT__","i"))
+  	}
+	UNION
+	{
+	?proxy rdfs:label ?label.
+	?proxy dct:description ?description.
+	?proxy dct:isPartOf <__COLLECTION__>.
+  	FILTER(regex(?description,"__TEXT__","i"))
+  	}
 }

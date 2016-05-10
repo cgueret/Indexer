@@ -78,16 +78,16 @@
 		</section>
 
 		<section class="entity-list">
-		{% for (index, uri) in data.related.items() %}
+		{% for (index, e) in data.related.items() %}
 			<dl>
 				<dt>
-					<a href="{{uri}}">{{uri}}</a>
+					<a href="{{e.uri}}">{{e.label}}</a>
 				</dt>
 				<dd class="uri">
-					<a href="{{uri}}">{{uri}}</a>
+					<a href="{{e.uri}}">{{e.uri}}</a>
 				</dd>
 				<dd class="description">
-					<p></p>
+					<p>{{e.description}}</p>
 				</dd>
 			</dl>
 		{% endfor %}

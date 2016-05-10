@@ -4,16 +4,18 @@ Created on 1 Apr 2016
 @author: guerec01
 '''
 import uuid
-from rdflib.namespace import OWL
-from rdflib.graph import Graph
-from rdflib.term import URIRef
-from SPARQLWrapper import SPARQLWrapper, JSON, POST
 import storage
 import os
+from rdflib.namespace import OWL, Namespace, RDF, RDFS, DCTERMS
+from rdflib.graph import Graph
+from rdflib.term import URIRef, BNode, Literal
+from SPARQLWrapper import SPARQLWrapper, JSON, POST
 from storage.config import BASE, SPARQL, SPARUL
 
 import logging
 logger = logging.getLogger(__name__)
+
+OLO = Namespace("http://purl.org/ontology/olo/core#")
 
 class ProxyStore(object):
     '''
@@ -51,8 +53,8 @@ class ProxyStore(object):
             created_proxy = False
         else:
             # Generate a new UUID
-            logger.info("Generating a new proxy")
             proxy_uri = URIRef("{}{}#id".format(BASE, uuid.uuid1()))
+            logger.info("Generating a new proxy {}".format(proxy_uri))
             created_proxy = True
 
         #  Create a new graph that will be inserted at the end
@@ -75,8 +77,9 @@ class ProxyStore(object):
         # If a proxy was created update the other proxies that were referring
         # to the subject
         if created_proxy:
-            self._relink_proxies(subject, proxy_uri)
-    
+            #self._relink_proxies(subject, proxy_uri)
+            pass
+        
         return proxy_uri.toPython()
     
     def has_proxy(self, uri):
@@ -102,13 +105,14 @@ class ProxyStore(object):
         print ('Found the proxy {}'.format(proxy))
         return proxy
     
-    def search(self, params):
+    def search(self, search_uri, params):
         '''
         Full text search. The parameters are expected to contain a variable
         'q' with the text to be searched for.
         '''
-        # Prepare the array of results
-        results = []
+        # Prepare the graph of results
+        graph = Graph()
+        graph.namespace_manager.bind('olo', OLO)
         
         # Prepare the query
         query = self._queries['full_text_search.rq']
@@ -123,11 +127,36 @@ class ProxyStore(object):
         sparql.setReturnFormat(JSON)
         bindings = sparql.query().convert()["results"]["bindings"]
         
-        # Convert the results
+        # Build the OLO slots
+        index = 0
         for b in bindings:
-            results.append(b["proxy"]["value"])
+            # Increment the index
+            index = index + 1
             
-        return results
+            # Get the minimal amount of information to describe a result
+            result_uri = b["proxy"]["value"]
+            label = b["label"]["value"]
+            description = b["description"]["value"]
+            
+            # Create a result slot
+            slot = BNode()
+            graph.add((slot, RDF.type, OLO.Slot))
+            graph.add((slot, RDFS.label, Literal("Result #{}".format(index+1))))
+            graph.add((slot, OLO['index'], Literal(index+1)))
+            graph.add((slot, OLO.item, URIRef(result_uri)))
+            
+            # Describe the result dataset
+            graph.add((URIRef(search_uri), OLO.slot, slot))
+ 
+            # Describe the result entry
+            graph.add((URIRef(result_uri), RDFS.label, Literal(label)))
+            graph.add((URIRef(result_uri), DCTERMS.description, Literal(description)))
+        
+        # Add some text to describe the search    
+        title = Literal("Everything containing \"{}\"".format(params['q']))
+        graph.add((URIRef(search_uri), RDFS.label, title))
+            
+        return graph
     
     def get_proxy(self, uri):
         '''
@@ -164,6 +193,7 @@ class ProxyStore(object):
         '''
         Insert the content of the graph into the triple store
         '''
+        logger.info("Storing {} triples for the proxy".format(len(graph)))
         # TODO Use rdflib tricks to optimise that part
         query = """
         INSERT DATA {
@@ -179,6 +209,8 @@ class ProxyStore(object):
         '''
         Update existing proxies to replace links to old_uri by links to new_uri
         '''
+        # TODO rewrite with a DELETE/INSERT https://www.w3.org/TR/sparql11-update/#deleteInsert
+        
         # Prepare the new links
         query = """
         CONSTRUCT {
