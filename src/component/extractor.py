@@ -9,8 +9,9 @@ import logging
 import requests
 import json
 from rdflib.plugins.stores import sparqlstore
-from rdflib.graph import Graph, ConjunctiveGraph
-from rdflib.namespace import Namespace
+from rdflib.graph import Graph
+from rdflib.namespace import Namespace, RDF
+from rdflib.plugins.sparql.processor import prepareQuery
 logger = logging.getLogger(__name__)
 
 INDEXER = Namespace("http://example.org/indexer#")
@@ -36,12 +37,15 @@ class EntityExtractor(object):
         self._store = sparqlstore.SPARQLUpdateStore(queryEndpoint=query_url, 
                                                    update_endpoint=update_url)
 
-        # Load the rule base into memory and keep them as NT
+        # Load the rule base into memory
+        self._rules = {}
         rules_base = os.path.join(component.__path__[0], 'rulebase.ttl')
-        self._rules = Graph().parse(rules_base, format="turtle").serialize(format="nt").decode()
-        
-        # Initialise the database used for reasoning
-        self._init_db(store_url)
+        logger.debug('Loading {}'.format(rules_base))
+        g = Graph().parse(rules_base, format="turtle")
+        for s in g.subjects(RDF.type, INDEXER.Rule):
+            q = prepareQuery(g.value(s, INDEXER.content).toPython())
+            self._rules[s.toPython()] = q
+        logger.info('Loaded {} rule(s)'.format(len(self._rules)))
         
     def _init_db(self, store_url):
         '''
@@ -81,18 +85,14 @@ class EntityExtractor(object):
         
         @param input_graph: the data graph to process in search for entities
         '''
-        # Graph containing the data to process and the one containing the
-        graph = ConjunctiveGraph(self._store)
-        graph.update("DELETE { ?s ?p ?o } WHERE { ?s ?p ?o }")
-        
-        # Push the data and the the rules to the store
-        graph.update("INSERT DATA { %s } " % self._rules)
-        logger.debug(len(graph))
-        graph.update("INSERT DATA { %s } " % input_graph.serialize(format='nt').decode())
-        logger.debug(len(graph))
-        
-        for st in graph.triples((None, INDEXER.triggered, None)):
-            logger.debug(st)
-            
+        # The results as an array of generated graphs
         results = []
+        
+        # Apply all the rules one by one
+        for (name, rule) in self._rules.items():
+            graph = input_graph.query(rule).graph
+            if len(graph) != 0:
+                logger.debug('Found a match for {}'.format(name))
+                results.append(graph)
+                
         return results

@@ -6,7 +6,7 @@ Created on 1 Apr 2016
 import uuid
 import storage
 import os
-from rdflib.namespace import OWL, Namespace, RDF, RDFS, DCTERMS
+from rdflib.namespace import OWL, Namespace, RDF, RDFS
 from rdflib.graph import Graph
 from rdflib.term import URIRef, BNode, Literal
 from SPARQLWrapper import SPARQLWrapper, JSON, POST
