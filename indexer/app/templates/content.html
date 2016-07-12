@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block main_content %}
+	<article>
+		<h1>Search results</h1>
+		<section>
+			<p>{{data.description.label}}</p>
+		</section>
+
+		<section class="entity-list">
+		{% for (index, e) in data.related.items() %}
+			<dl>
+				<dt>
+					<a href="{{e.uri}}">{{e.label}}</a>
+				</dt>
+				<dd class="uri">
+					<a href="{{e.uri}}">{{e.uri}}</a>
+				</dd>
+				<dd class="description">
+					<p>{{e.description}}</p>
+				</dd>
+			</dl>
+		{% endfor %}
+		</section>
+	</article>
+{% endblock %}

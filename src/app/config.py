@@ -1,3 +1,0 @@
-# Debug logging
-DEBUG = True
-

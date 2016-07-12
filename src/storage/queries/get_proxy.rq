@@ -1,6 +1,0 @@
-# Get all the data describing a proxy
-CONSTRUCT {
-	<__URI__> ?p ?o.
-} WHERE {
-	<__URI__> ?p ?o.
-}

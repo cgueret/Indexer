@@ -1,0 +1,13 @@
+<http://shakespeare.acropolis.org.uk/> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rdfs.org/ns/void#DatasetDescription> <http://shakespeare.acropolis.org.uk/index.ttl> .
+<http://shakespeare.acropolis.org.uk/> <http://purl.org/dc/terms/license> <http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/> <http://shakespeare.acropolis.org.uk/index.ttl> .
+<http://shakespeare.acropolis.org.uk/> <http://xmlns.com/foaf/0.1/primaryTopic> <http://shakespeare.acropolis.org.uk/#id> <http://shakespeare.acropolis.org.uk/index.ttl> .
+<http://shakespeare.acropolis.org.uk/#id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://rdfs.org/ns/void#Dataset> <http://shakespeare.acropolis.org.uk/index.ttl> .
+<http://shakespeare.acropolis.org.uk/#id> <http://www.w3.org/2000/01/rdf-schema#label> "BBC Shakespeare Archive Resource"@en-gb <http://shakespeare.acropolis.org.uk/index.ttl> .
+<http://shakespeare.acropolis.org.uk/#id> <http://purl.org/dc/terms/description> "This site contains information about hundreds of TV and radio programmes from the BBC\u2019s Shakespeare collection, as well as more than a thousand photos from classic Shakespeare productions."@en-gb <http://shakespeare.acropolis.org.uk/index.ttl> .
+<http://shakespeare.acropolis.org.uk/#id> <http://purl.org/dc/terms/license> <http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/> <http://shakespeare.acropolis.org.uk/index.ttl> .
+<http://shakespeare.acropolis.org.uk/#id> <http://rdfs.org/ns/void#subset> <http://shakespeare.acropolis.org.uk/images#id> <http://shakespeare.acropolis.org.uk/index.ttl> .
+<http://shakespeare.acropolis.org.uk/#id> <http://rdfs.org/ns/void#subset> <http://shakespeare.acropolis.org.uk/programmes#id> <http://shakespeare.acropolis.org.uk/index.ttl> .
+<http://shakespeare.acropolis.org.uk/#id> <http://rdfs.org/ns/void#subset> <http://shakespeare.acropolis.org.uk/works#id> <http://shakespeare.acropolis.org.uk/index.ttl> .
+<http://shakespeare.acropolis.org.uk/#id> <http://www.w3.org/2000/01/rdf-schema#seeAlso> <http://shakespeare.acropolis.org.uk/terms#id> <http://shakespeare.acropolis.org.uk/index.ttl> .
+<http://shakespeare.acropolis.org.uk/#members> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/odrl/2/Group> <http://shakespeare.acropolis.org.uk/index.ttl> .
+<http://shakespeare.acropolis.org.uk/#members> <http://www.w3.org/2000/01/rdf-schema#label> "Authorised users of the BBC Shakespeare Archive Resource"@en-gb <http://shakespeare.acropolis.org.uk/index.ttl> .

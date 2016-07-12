@@ -1,0 +1,64 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix indexer: <http://example.org/indexer#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix mrss: <http://search.yahoo.com/mrss/> .
+@prefix po: <http://purl.org/ontology/po/> .
+
+indexer:image_SAR a indexer:DescriptionRule;
+	indexer:if """
+		?proxy rdf:type foaf:Image.
+		?proxy rdfs:label ?label.
+		?proxy dct:description ?description.
+		?proxy dct:subject ?subject.
+		?proxy foaf:depicts ?depicts.
+		?proxy mrss:player ?player.
+	""";
+	indexer:then """
+		?proxy rdf:type foaf:Image.
+		?proxy rdfs:label ?label.
+		?proxy rdfs:comment ?description.
+		?proxy foaf:topic ?subject.
+		?proxy foaf:topic ?depicts.
+		?proxy mrss:player ?player.
+	""";
+	rdfs:label "Detect image in Shakespeare Archive Resource".
+	
+indexer:video_SAR a indexer:DescriptionRule;
+	indexer:if """
+		?proxy rdf:type po:Episode.
+		?proxy rdfs:label ?label.
+		?proxy po:synopsis ?description.
+		?proxy po:credit ?credit.
+		?proxy mrss:player ?player.
+	""";
+	indexer:then """
+		?proxy rdf:type po:TVContent.
+		?proxy rdfs:label ?label.
+		?proxy rdfs:comment ?description.
+		?proxy foaf:topic ?credit.
+		?proxy mrss:player ?player.
+	""";
+	rdfs:label "Turns an episode into the matching schema.org object".
+
+indexer:dct_is_part_of a indexer:CollectionRule;
+	indexer:if """
+		?proxy dct:isPartOf ?collection.
+	""";
+	indexer:then """
+		?proxy dct:isPartOf ?collection.
+	""";
+	rdfs:label "If dct:isPartOf something then is partOf the matching collection".
+
+indexer:dct_is_part_of a indexer:AggregationRule;
+	indexer:if """
+		?proxy owl:sameAs ?target.
+	""";
+	indexer:then """
+		?proxy owl:sameAs ?target.
+	""";
+	rdfs:label "Follow owl:sameAs logic".
+	

@@ -1,0 +1,54 @@
+{% extends "bootstrap/base.html" %} 
+
+{% block head %}
+{{super()}}
+<link rel="shortcut icon" href="/assets/favicon.ico" type="image/x-icon">
+{% endblock %}
+
+{% block title %}Hiperim{% endblock %}
+
+{% block navbar %}
+<header class="navbar navbar-light navbar-static-top">
+	<nav class="nav navbar-nav">
+		<a class="navbar-brand" href="#">Hiperim</a>
+		<button type="button" class="navbar-toggle collapsed"
+			data-toggle="collapse" data-target="#navbar" aria-expanded="false"
+			aria-controls="navbar">
+			<span class="sr-only">Toggle navigation</span> <span
+				class="icon-bar"></span> <span class="icon-bar"></span> <span
+				class="icon-bar"></span>
+		</button>
+    </nav>
+</header>
+{% endblock %} 
+
+{% block content %}
+<div class="container">
+	<div class="row">
+		<div class="col-md-12">{% block main_content %} {% endblock %}
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+			<hr />
+			<p class="text-left small">
+				<span class="glyphicon glyphicon-copyright-mark"></span> 2016 -
+				Hiperim.com
+			</p>
+		</div>
+	</div>
+</div>
+{% endblock %} 
+
+{% block scripts %} 
+{{super()}}
+<script src="{{url_for('assets', path='js/hiperim.js')}}"></script>
+{% endblock %} 
+
+{% block styles %} 
+{{super()}}
+<link rel="stylesheet" href="{{url_for('assets', path='css/hiperim.css')}}">
+{% endblock %} 
+
+{% block bootstrap_js_bottom %} 
+{% endblock %}
