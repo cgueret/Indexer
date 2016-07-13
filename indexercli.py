@@ -23,7 +23,7 @@ Commands:
     ingest FILE.NQ
         Ingest the content of FILE.NQ into Indexer
     process
-        Process the content of the queue
+        Process the URIs in the queue
 """
 
 def init_login(debug=False):

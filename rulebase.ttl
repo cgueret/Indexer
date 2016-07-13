@@ -7,8 +7,10 @@
 @prefix dct: <http://purl.org/dc/terms/> .
 @prefix mrss: <http://search.yahoo.com/mrss/> .
 @prefix po: <http://purl.org/ontology/po/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix void: <http://rdfs.org/ns/void#> .
 
-indexer:image_SAR a indexer:DescriptionRule;
+indexer:image_SAR a indexer:Rule;
 	indexer:if """
 		?proxy rdf:type foaf:Image.
 		?proxy rdfs:label ?label.
@@ -27,7 +29,7 @@ indexer:image_SAR a indexer:DescriptionRule;
 	""";
 	rdfs:label "Detect image in Shakespeare Archive Resource".
 	
-indexer:video_SAR a indexer:DescriptionRule;
+indexer:video_SAR a indexer:Rule;
 	indexer:if """
 		?proxy rdf:type po:Episode.
 		?proxy rdfs:label ?label.
@@ -44,7 +46,7 @@ indexer:video_SAR a indexer:DescriptionRule;
 	""";
 	rdfs:label "Turns an episode into the matching schema.org object".
 
-indexer:dct_is_part_of a indexer:CollectionRule;
+indexer:dct_is_part_of a indexer:Rule;
 	indexer:if """
 		?proxy dct:isPartOf ?collection.
 	""";
@@ -53,7 +55,16 @@ indexer:dct_is_part_of a indexer:CollectionRule;
 	""";
 	rdfs:label "If dct:isPartOf something then is partOf the matching collection".
 
-indexer:dct_is_part_of a indexer:AggregationRule;
+indexer:void_subset a indexer:Rule;
+	indexer:if """
+		?collection void:subset ?proxy.
+	""";
+	indexer:then """
+		?proxy dct:isPartOf ?collection.
+	""";
+	rdfs:label "If dct:isPartOf something then is partOf the matching collection".
+
+indexer:owl_sameas a indexer:Rule;
 	indexer:if """
 		?proxy owl:sameAs ?target.
 	""";

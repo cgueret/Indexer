@@ -12,6 +12,8 @@ from rdflib.term import URIRef, BNode, Literal
 from SPARQLWrapper import SPARQLWrapper, JSON, POST
 
 import logging
+import requests
+import json
 logger = logging.getLogger(__name__)
 
 class IndexStore(object):
@@ -28,67 +30,85 @@ class IndexStore(object):
         @param store: location of the triple store
         '''
         # The URIs for the store
+        self.store_url = config.stardog_url()
+        self.db_name = config.stardog_db()
         self.sparql = config.stardog_url() + config.stardog_db() + '/query'
         self.sparul = config.stardog_url() + config.stardog_db() + '/update'
 
         # The base for all the URIs
         self.base = config.base()
     
+        # Get the list of DBs and check if our DB is already there
+        response = requests.get(self.store_url + 'admin/databases')
+        databases = json.loads(response.content.decode())['databases']
+        
+        # If not initialise it
+        if not self.db_name in databases:
+            self.reset_db()
+            
     def reset_db(self):
         '''
-        Utility function to clean the DB when testing
+        Initialise the database
         '''
-        logger.info("Cleaning the DB")
-        query = "DELETE {?s ?p ?o.} WHERE {?s ?p ?o.}"
-        sparql = SPARQLWrapper(self.sparul)
-        sparql.setQuery(query)
-        sparql.setMethod(POST)
-        sparql.query()
+        # Get the list of DBs and check if our DB is already there
+        # if it is there just delete it
+        response = requests.get(self.store_url + 'admin/databases')
+        databases = json.loads(response.content.decode())['databases']
+        if self.db_name in databases:
+            requests.delete(self.store_url + 'admin/databases/' + self.db_name)
         
-    def store(self, graph):
-        '''
-        Take the given graph and turn it into a proxy entity, or update the
-        description of an existing proxy with the properties defined in the
-        graph
-        '''
-        # Find the subject of the graph 
-        subject = [s for s in graph.subjects()][0]
-        
-        # Check if we have a proxy or need to create a new one
-        if self.has_proxy(subject):
-            # There is already a proxy
-            proxy_uri = self.get_proxy_uri(subject)
-            created_proxy = False
-        else:
-            # Generate a new UUID
-            proxy_uri = URIRef("{}{}#id".format(self.base, uuid.uuid1()))
-            logger.info("Generating a new proxy {}".format(proxy_uri))
-            created_proxy = True
+        # Parameters for the reasoning DB
+        # more options http://docs.stardog.com/#_database_admin
+        parameters = {"dbname" : self.db_name,
+                      "options" : {"search.enabled" : True,
+                                   "query.all.graphs": True,
+                                   "index.type": "disk"},
+                      "files": []}
+        files = {'data': ('data', json.dumps(parameters), 'application/json')}
 
-        #  Create a new graph that will be inserted at the end
-        proxy_graph = Graph()
+        # Create the DB
+        response = requests.post(self.store_url + 'admin/databases', files=files)
+        if response.status_code == 201:
+            logger.info('Created DB \"{}\"'.format(self.db_name))
+        else:
+            logger.error('Could not create \"{}\"'.format(self.db_name))
+            logger.error(response.content.decode())
         
-        # State that this entity is part of the proxy
-        proxy_graph.add((proxy_uri, OWL.sameAs, subject))
+    def store(self, dataset):
+        '''
+        Persist the given data set into the triple store. The data set is
+        composed of several named graphs containing part of the proxy
+        description. There is also supposed to be one graph with the provenance
+        information. All the graphs are stored as-is eventually overwriting 
+        previous content stored under the same graph name.
         
-        # Iterate over all the triples for the entity graph
-        for (_, predicate, obj) in graph:
-            # If the object is a URI to use a matching proxy instead
-            if isinstance(obj, URIRef) and self.has_proxy(obj):
-                obj = self.get_proxy_uri(obj)
-            #  Add the triple to the proxy graph
-            proxy_graph.add((proxy_uri, predicate, obj))
+        @param dataset: the data set containing some proxy descriptions derived
+        from processing a cached document
+        
+        @return: True if successful
+        '''
+        
+        for graph in dataset.graphs():
+            # Skip empty graphs
+            if len(graph) == 0:
+                continue
             
-        #  Store the proxy graph in the triple store
-        self._store_proxy(proxy_graph)
+            # Get the name of the graph and its content
+            graph_name = graph.identifier.toPython()
+            payload = graph.serialize(format="nt").decode()
+            
+            # Store the graph
+            # TODO Use rdflib tricks to optimise that part
+            logger.info("Storing {} triples into <{}>".format(len(graph), graph_name))            
+            query = """
+                INSERT DATA { GRAPH <__NAME__> { __PAYLOAD__ } }
+            """.replace("__PAYLOAD__", payload).replace("__NAME__", graph_name)
+            sparql = SPARQLWrapper(self.sparul)
+            sparql.setQuery(query)
+            sparql.setMethod(POST)
+            sparql.query()
         
-        # If a proxy was created update the other proxies that were referring
-        # to the subject
-        if created_proxy:
-            #self._relink_proxies(subject, proxy_uri)
-            pass
-        
-        return proxy_uri.toPython()
+        return True
     
     def has_proxy(self, uri):
         '''
@@ -183,9 +203,7 @@ class IndexStore(object):
         # TODO Use rdflib tricks to optimise that part
         query = """
         PREFIX owl: <http://www.w3.org/2002/07/owl#>
-        SELECT ?proxy WHERE {
-            ?proxy owl:sameAs <__TARGET__>.
-        }
+        SELECT ?proxy WHERE { ?proxy owl:sameAs <__TARGET__>.}
         """.replace("__TARGET__", uri)
         sparql = SPARQLWrapper(self.sparql)
         sparql.setQuery(query)
@@ -196,70 +214,23 @@ class IndexStore(object):
         else:
             return None
      
-    def _store_proxy(self, graph):
+    def update_uris(self, replacement_map):
         '''
-        Insert the content of the graph into the triple store
+        This function takes as a parameter a set of mapping old->new for URIs.
+        This is used to update references to a URI for which a proxy was not
+        available at the time of processing but has been created afterwards.
         '''
-        logger.info("Storing {} triples for the proxy".format(len(graph)))
-        # TODO Use rdflib tricks to optimise that part
-        query = """
-        INSERT DATA {
-            __PAYLOAD__
-        }
-        """.replace("__PAYLOAD__", graph.serialize(format="nt").decode())
-        sparql = SPARQLWrapper(self.sparul)
-        sparql.setQuery(query)
-        sparql.setMethod(POST)
-        sparql.query()
-    
-    def _relink_proxies(self, old_uri, new_uri):
-        '''
-        Update existing proxies to replace links to old_uri by links to new_uri
-        '''
-        # TODO rewrite with a DELETE/INSERT https://www.w3.org/TR/sparql11-update/#deleteInsert
-        
-        # Prepare the new links
-        query = """
-        CONSTRUCT {
-            ?proxy ?pred <__NEWURI__>.
-        } WHERE {
-            ?proxy ?pred <__OLDURI__>.
-            FILTER (?proxy != <__NEWURI__>)
-        }
-        """.replace("__OLDURI__", old_uri).replace("__NEWURI__", new_uri)
-        sparql = SPARQLWrapper(self.sparql)
-        sparql.setQuery(query)
-        graph = sparql.query().convert()
-        
-        # If there is nothing to do, return right away
-        if len(graph) == 0:
-            return
-            
-        # Remove all the old links
-        query = """
-        DELETE {
-            ?proxy ?pred <__TARGET__>.
-        } WHERE {
-            ?proxy ?pred <__TARGET__>.
-        }
-        """.replace("__TARGET__", old_uri)
-        sparql = SPARQLWrapper(self.sparul)
-        sparql.setQuery(query)
-        sparql.setMethod(POST)
-        sparql.query()
-        
-        # Insert the new links
-        query = """
-        INSERT DATA {
-            __PAYLOAD__
-        }
-        """.replace("__PAYLOAD__", graph.serialize(format="nt").decode())
-        sparql = SPARQLWrapper(self.sparul)
-        sparql.setQuery(query)
-        sparql.setMethod(POST)
-        sparql.query()
-        
-        # TODO handle merging proxies (?)
+        for (old_uri, new_uri) in replacement_map.items():
+            logger.info("Update {} -> {}".format(old_uri, new_uri))
+            query = """
+                DELETE {?s ?p <OLD_URI>.}
+                INSERT {?s ?p <NEW_URI>.}
+                WHERE {?s ?p <OLD_URI>.}
+                """.replace("OLD_URI", old_uri).replace("NEW_URI", new_uri)
+            sparql = SPARQLWrapper(self.sparul)
+            sparql.setQuery(query)
+            sparql.setMethod(POST)
+            sparql.query()
     
     def close(self):
         '''
